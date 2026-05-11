@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syllabus Explorer | Industrial Statistics & Mathematical Finance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Warm Neutrals & Academic Maroon (Slate-50 to Slate-900, accented with Rose-800 for UoC vibe) -->
+    <!-- Application Structure Plan: A dashboard-style SPA structure. Top section introduces the dual-degree paths. A statistical overview provides a high-level summary of the workload (Chart.js donut). The core is the 'Interactive Curriculum Explorer', allowing users to filter by Year and Specialization Stream (IS vs MF), making the complex 4-year progression easily digestible. Finally, a 'Skills Matrix' section uses a Radar chart to compare the distinct competencies gained in each stream, aiding students in career planning. This logical flow moves from general overview -> detailed exploration -> comparative outcomes. -->
+    <!-- Visualization & Content Choices: 
+         1. Degree Composition (Goal: Inform proportions) -> Donut Chart -> Hover for exact credits -> Shows foundational vs specialized balance -> Chart.js.
+         2. Curriculum Explorer (Goal: Organize & Filter) -> Interactive Grid + Detail Modal -> Click to expand -> Allows navigating a dense syllabus without overwhelm -> Vanilla JS + Tailwind.
+         3. Skills Comparison (Goal: Compare paths) -> Radar Chart -> Hover for metric values -> Clearly visualizes the divergence between IS and MF paths -> Chart.js.
+         All visualizations are restricted to Canvas/HTML/CSS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f8fafc; color: #334155; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 400px; }
+        }
+        .modal-active { overflow: hidden; }
+        .course-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .course-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); cursor: pointer; }
+        .tab-active { border-bottom: 2px solid #9f1239; color: #9f1239; font-weight: 600; }
+        .stream-btn-active { background-color: #9f1239; color: white; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl">🎓</span>
+                    <span class="font-bold text-lg tracking-tight">UoC IS & MF Explorer</span>
+                </div>
+                <div class="hidden md:flex space-x-6 text-sm font-medium">
+                    <a href="#overview" class="hover:text-rose-300 transition">Overview</a>
+                    <a href="#curriculum" class="hover:text-rose-300 transition">Curriculum</a>
+                    <a href="#skills" class="hover:text-rose-300 transition">Skills Matrix</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header id="overview" class="bg-white border-b border-slate-200 pt-16 pb-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">Industrial Statistics & Mathematical Finance</h1>
+            <h2 class="text-xl text-slate-600 font-medium mb-8">University of Colombo - Syllabus & Academic Pathway Analysis</h2>
+            <p class="max-w-3xl mx-auto text-slate-500 leading-relaxed text-lg">
+                This interactive application analyzes the comprehensive structure of the B.Sc. degree program. It explores how foundational mathematics and statistics evolve into highly specialized tracks: <strong>Industrial Statistics (IS)</strong>, focusing on quality, process optimization, and operations, and <strong>Mathematical Finance (MF)</strong>, focusing on stochastic modeling, risk management, and quantitative trading.
+            </p>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-20">
+
+        <section id="structure" class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold text-slate-800 mb-2">Degree Composition & Credit Weighting</h3>
+                <p class="text-slate-600">
+                    This section provides a macro-level view of the four-year degree structure. The visualization below breaks down the total academic credits into core disciplines. It highlights the heavy emphasis on foundational quantitative skills before branching into applied domains. Interact with the chart to see specific credit allocations.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="chart-container">
+                    <canvas id="creditChart"></canvas>
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <div class="text-3xl mb-2">📊</div>
+                        <h4 class="font-bold text-lg text-slate-800 mb-1">Foundational Years (1 & 2)</h4>
+                        <p class="text-sm text-slate-600">Students build a rigorous base in pure mathematics, probability theory, statistical inference, and computer programming. This common core is mandatory for all students before specialization.</p>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <div class="text-3xl mb-2">🛤️</div>
+                        <h4 class="font-bold text-lg text-slate-800 mb-1">Specialization Years (3 & 4)</h4>
+                        <p class="text-sm text-slate-600">Students diverge into either IS or MF streams. The curriculum shifts from general theory to highly applied, domain-specific models, practical projects, and a final year research dissertation.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="curriculum">
+            <div class="mb-8 text-center">
+                <h3 class="text-3xl font-bold text-slate-800 mb-4">Interactive Curriculum Explorer</h3>
+                <p class="text-slate-600 max-w-2xl mx-auto">
+                    Navigate through the academic journey. Select an academic year to view the modules. For Years 3 and 4, toggle between the Industrial Statistics and Mathematical Finance streams to compare the divergent specialized subject matter. Click on any module card for detailed syllabus information.
+                </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-slate-200 pb-4">
+                    <div class="flex space-x-2 md:space-x-8 mb-4 md:mb-0" id="year-tabs">
+                        <button class="year-tab tab-active px-2 py-2 text-slate-500 hover:text-slate-800 transition" data-year="1">Year 1</button>
+                        <button class="year-tab px-2 py-2 text-slate-500 hover:text-slate-800 transition" data-year="2">Year 2</button>
+                        <button class="year-tab px-2 py-2 text-slate-500 hover:text-slate-800 transition" data-year="3">Year 3</button>
+                        <button class="year-tab px-2 py-2 text-slate-500 hover:text-slate-800 transition" data-year="4">Year 4</button>
+                    </div>
+                    <div id="stream-toggle-container" class="hidden bg-slate-100 p-1 rounded-lg flex space-x-1">
+                        <button class="stream-btn stream-btn-active px-4 py-1.5 rounded-md text-sm font-medium transition" data-stream="IS">Industrial Statistics</button>
+                        <button class="stream-btn text-slate-600 hover:bg-slate-200 px-4 py-1.5 rounded-md text-sm font-medium transition" data-stream="MF">Mathematical Finance</button>
+                    </div>
+                </div>
+
+                <div id="course-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            </div>
+        </section>
+
+        <section id="skills" class="bg-slate-900 text-white p-8 md:p-12 rounded-2xl shadow-lg">
+            <div class="mb-10 text-center">
+                <h3 class="text-3xl font-bold mb-4">Competency & Skills Matrix</h3>
+                <p class="text-slate-300 max-w-2xl mx-auto">
+                    This section illustrates the distinct professional profiles developed by the end of the degree. The radar chart compares the core competencies gained by a graduate of the Industrial Statistics stream versus the Mathematical Finance stream, highlighting their respective strengths in the job market.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                <div class="lg:col-span-2 chart-container bg-slate-800 rounded-xl p-4">
+                    <canvas id="skillsChart"></canvas>
+                </div>
+                <div class="space-y-6">
+                    <div class="border-l-4 border-rose-500 pl-4">
+                        <h4 class="font-bold text-xl text-rose-400 mb-2">IS Graduate Profile</h4>
+                        <ul class="text-slate-300 text-sm space-y-2">
+                            <li>• High proficiency in experimental design & quality assurance.</li>
+                            <li>• Strong operational research and optimization skills.</li>
+                            <li>• Target Careers: Quality Engineer, Data Scientist, Operations Analyst.</li>
+                        </ul>
+                    </div>
+                    <div class="border-l-4 border-blue-400 pl-4 mt-8">
+                        <h4 class="font-bold text-xl text-blue-400 mb-2">MF Graduate Profile</h4>
+                        <ul class="text-slate-300 text-sm space-y-2">
+                            <li>• Advanced knowledge of stochastic calculus and pricing models.</li>
+                            <li>• Expertise in financial risk assessment and time-series forecasting.</li>
+                            <li>• Target Careers: Quantitative Analyst, Risk Manager, Actuary.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="course-modal" class="fixed inset-0 bg-slate-900 bg-opacity-50 hidden z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300" id="modal-content-box">
+            <div class="p-6 md:p-8">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span id="modal-code" class="inline-block px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full mb-2"></span>
+                        <h3 id="modal-title" class="text-2xl font-bold text-slate-900"></h3>
+                    </div>
+                    <button id="close-modal" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none">&times;</button>
+                </div>
+                
+                <div class="flex space-x-6 mb-6 text-sm text-slate-500 border-b border-slate-100 pb-4">
+                    <div class="flex items-center"><span class="mr-2">⏱️</span> <span id="modal-credits"></span></div>
+                    <div class="flex items-center"><span class="mr-2">📚</span> <span id="modal-type"></span></div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold text-slate-800 mb-1">Module Description</h4>
+                        <p id="modal-desc" class="text-slate-600 text-sm leading-relaxed"></p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg mt-4">
+                        <h4 class="font-semibold text-slate-800 text-sm mb-2">Key Topics Covered:</h4>
+                        <ul id="modal-topics" class="list-disc list-inside text-sm text-slate-600 space-y-1"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-slate-900 text-slate-400 py-8 text-center text-sm mt-12 border-t border-slate-800">
+        <p>Interactive Syllabus Explorer - Based on structural analysis of IS & MF programs.</p>
+    </footer>
+
+    <script>
+        const syllabusData = [
+            { id: 'st101', year: 1, stream: 'Common', code: 'ST 1013', title: 'Introduction to Statistics', credits: '3 Credits', type: 'Core', desc: 'An introductory course laying the foundation for statistical analysis. Covers basic concepts of probability, random variables, and descriptive statistics crucial for subsequent modules.', topics: ['Descriptive Statistics & Data Visualization', 'Probability Rules & Bayes Theorem', 'Discrete & Continuous Distributions', 'Expectation & Variance'] },
+            { id: 'mt101', year: 1, stream: 'Common', code: 'MT 1013', title: 'Calculus & Real Analysis', credits: '3 Credits', type: 'Core', desc: 'Rigorous introduction to limits, continuity, differentiability, and integration. Forms the mathematical backbone required for probability theory and advanced modeling.', topics: ['Limits & Continuity', 'Derivatives & Applications', 'Definite & Indefinite Integrals', 'Sequences & Series'] },
+            { id: 'cs101', year: 1, stream: 'Common', code: 'CS 1012', title: 'Programming Fundamentals', credits: '2 Credits', type: 'Core', desc: 'Introduces computational thinking and programming using Python. Essential for data manipulation and implementing statistical algorithms later in the degree.', topics: ['Variables, Loops & Conditionals', 'Data Structures (Lists, Dictionaries)', 'Functions & Modules', 'Basic File I/O'] },
+            { id: 'mt102', year: 1, stream: 'Common', code: 'MT 1023', title: 'Linear Algebra I', credits: '3 Credits', type: 'Core', desc: 'Study of vector spaces, matrices, and linear transformations. Highly relevant for multivariate statistics and financial portfolio optimizations.', topics: ['Matrix Operations & Determinants', 'Systems of Linear Equations', 'Vector Spaces & Subspaces', 'Eigenvalues & Eigenvectors'] },
+
+            { id: 'st201', year: 2, stream: 'Common', code: 'ST 2013', title: 'Statistical Inference I', credits: '3 Credits', type: 'Core', desc: 'Transitions from probability to inference. Covers point estimation, interval estimation, and the fundamentals of hypothesis testing.', topics: ['Properties of Estimators', 'Confidence Intervals', 'Neyman-Pearson Lemma', 'Likelihood Ratio Tests'] },
+            { id: 'st202', year: 2, stream: 'Common', code: 'ST 2023', title: 'Applied Regression Analysis', credits: '3 Credits', type: 'Core', desc: 'Practical course on modeling relationships between variables. Heavy focus on model building, diagnostics, and interpretation using statistical software.', topics: ['Simple Linear Regression', 'Multiple Regression Matrices', 'Model Diagnostics & Residual Analysis', 'Variable Selection Techniques'] },
+            { id: 'mt201', year: 2, stream: 'Common', code: 'MT 2013', title: 'Multivariate Calculus', credits: '3 Credits', type: 'Core', desc: 'Extends calculus to multiple dimensions, essential for optimization problems in both industrial operations and financial modeling.', topics: ['Partial Derivatives', 'Multiple Integrals', 'Gradient, Divergence, Curl', 'Optimization of Multivariable Functions'] },
+            { id: 'cs201', year: 2, stream: 'Common', code: 'CS 2022', title: 'Database Management', credits: '2 Credits', type: 'Core', desc: 'Teaches how to store, query, and manage large datasets using SQL. A critical skill for modern data analysts in any industry.', topics: ['Relational Data Models', 'SQL Queries (Joins, Aggregations)', 'Database Normalization', 'Connecting DBs with Python/R'] },
+
+            { id: 'is301', year: 3, stream: 'IS', code: 'IS 3013', title: 'Statistical Quality Control', credits: '3 Credits', type: 'Core', desc: 'Core industrial statistics module. Teaches how to monitor and control manufacturing and service processes using statistical tools.', topics: ['Control Charts for Variables (X-bar, R)', 'Control Charts for Attributes (p, c)', 'Process Capability Analysis', 'Acceptance Sampling Plans'] },
+            { id: 'is302', year: 3, stream: 'IS', code: 'IS 3023', title: 'Design of Experiments (DoE)', credits: '3 Credits', type: 'Core', desc: 'Methodologies for planning experiments so that the data collected can be analyzed to yield valid and objective conclusions.', topics: ['Randomized Complete Block Designs', 'Factorial Designs (2^k)', 'Fractional Factorials', 'Response Surface Methodology'] },
+            { id: 'is303', year: 3, stream: 'IS', code: 'IS 3033', title: 'Reliability Theory', credits: '3 Credits', type: 'Elective', desc: 'Study of the probability that a system or component will perform its required function under specified conditions for a stated period.', topics: ['Hazard Functions & Failure Rates', 'Reliability of System Configurations', 'Censored Data Analysis', 'Maintenance & Replacement Models'] },
+            { id: 'is304', year: 3, stream: 'IS', code: 'IS 3042', title: 'Six Sigma Methodologies', credits: '2 Credits', type: 'Core', desc: 'Explores the DMAIC (Define, Measure, Analyze, Improve, Control) framework used widely in corporate process improvement.', topics: ['DMAIC Framework', 'Lean Principles', 'Root Cause Analysis', 'Project Management in Six Sigma'] },
+
+            { id: 'mf301', year: 3, stream: 'MF', code: 'MF 3013', title: 'Financial Mathematics I', credits: '3 Credits', type: 'Core', desc: 'Introduces the time value of money, deterministic cash flows, and basic fixed-income securities.', topics: ['Interest Rates & Discount Factors', 'Annuities & Amortization', 'Bond Pricing & Yield to Maturity', 'Term Structure of Interest Rates'] },
+            { id: 'mf302', year: 3, stream: 'MF', code: 'MF 3023', title: 'Stochastic Processes', credits: '3 Credits', type: 'Core', desc: 'A rigorous mathematical treatment of systems that evolve randomly over time. The bedrock of advanced financial modeling.', topics: ['Discrete-time Markov Chains', 'Poisson Processes', 'Continuous-time Markov Chains', 'Introduction to Brownian Motion'] },
+            { id: 'mf303', year: 3, stream: 'MF', code: 'MF 3033', title: 'Time Series Analysis', credits: '3 Credits', type: 'Core', desc: 'Techniques for analyzing time-ordered data points to extract meaningful statistics and predict future values. Crucial for algorithmic trading.', topics: ['Stationarity & Autocorrelation', 'ARIMA Models', 'Volatility Modeling (ARCH/GARCH)', 'Forecasting Techniques'] },
+            { id: 'mf304', year: 3, stream: 'MF', code: 'MF 3042', title: 'Corporate Finance Basics', credits: '2 Credits', type: 'Elective', desc: 'Bridges the gap between pure mathematics and actual corporate financial decision making.', topics: ['Capital Budgeting', 'Cost of Capital', 'Capital Structure Theory', 'Dividend Policy'] },
+
+            { id: 'is401', year: 4, stream: 'IS', code: 'IS 4013', title: 'Operations Research', credits: '3 Credits', type: 'Core', desc: 'Advanced analytical methods to help make better complex decisions regarding resource allocation and system efficiency.', topics: ['Linear Programming & Simplex Method', 'Transportation & Assignment Problems', 'Network Analysis (PERT/CPM)', 'Queuing Theory'] },
+            { id: 'is402', year: 4, stream: 'IS', code: 'IS 4023', title: 'Machine Learning for Industry', credits: '3 Credits', type: 'Core', desc: 'Applies modern statistical learning techniques to industrial datasets for predictive maintenance, fault detection, and optimization.', topics: ['Classification Algorithms (SVM, Trees)', 'Clustering Techniques', 'Dimensionality Reduction (PCA)', 'Ensemble Methods'] },
+            { id: 'is403', year: 4, stream: 'IS', code: 'IS 4096', title: 'Industrial Project / Research', credits: '6 Credits', type: 'Core', desc: 'A comprehensive, year-long research project solving a real-world problem in collaboration with an industry partner.', topics: ['Problem Formulation', 'Data Collection in Industrial Settings', 'Implementation of Statistical Models', 'Final Dissertation & Defense'] },
+
+            { id: 'mf401', year: 4, stream: 'MF', code: 'MF 4013', title: 'Options Pricing Theory', credits: '3 Credits', type: 'Core', desc: 'The pinnacle of mathematical finance. Covers the derivation and application of models for pricing derivative securities.', topics: ['Arbitrage & Risk-Neutral Valuation', 'Binomial Tree Models', 'Ito Calculus Basics', 'The Black-Scholes-Merton Equation'] },
+            { id: 'mf402', year: 4, stream: 'MF', code: 'MF 4023', title: 'Financial Risk Management', credits: '3 Credits', type: 'Core', desc: 'Quantitative techniques for identifying, measuring, and managing various types of financial risk in institutional portfolios.', topics: ['Value at Risk (VaR)', 'Expected Shortfall', 'Credit Risk Modeling', 'Stress Testing & Scenario Analysis'] },
+            { id: 'mf403', year: 4, stream: 'MF', code: 'MF 4096', title: 'Finance Research Project', credits: '6 Credits', type: 'Core', desc: 'Independent research involving the development or application of mathematical models to financial market data.', topics: ['Literature Review in Quant Finance', 'Algorithm Implementation', 'Backtesting Strategies', 'Final Dissertation & Defense'] }
+        ];
+
+        let currentYear = 1;
+        let currentStream = 'IS';
+
+        const yearTabs = document.querySelectorAll('.year-tab');
+        const streamContainer = document.getElementById('stream-toggle-container');
+        const streamBtns = document.querySelectorAll('.stream-btn');
+        const courseGrid = document.getElementById('course-grid');
+        const modal = document.getElementById('course-modal');
+        const modalContentBox = document.getElementById('modal-content-box');
+        const closeModalBtn = document.getElementById('close-modal');
+
+        function renderCourses() {
+            courseGrid.innerHTML = '';
+            const filtered = syllabusData.filter(c => {
+                if (currentYear <= 2) return c.year === currentYear && c.stream === 'Common';
+                return c.year === currentYear && c.stream === currentStream;
+            });
+
+            filtered.forEach(course => {
+                const icon = course.type === 'Core' ? '📘' : '📗';
+                const card = document.createElement('div');
+                card.className = 'course-card bg-white border border-slate-200 rounded-xl p-5 flex flex-col h-full';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-1 rounded-md">${course.code}</span>
+                        <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">${course.credits}</span>
+                    </div>
+                    <h4 class="font-bold text-lg text-slate-800 mb-2 leading-tight flex-grow">${course.title}</h4>
+                    <div class="mt-4 flex items-center text-sm text-slate-500 border-t border-slate-100 pt-3">
+                        <span class="mr-2">${icon}</span> ${course.type} Module
+                    </div>
+                `;
+                card.addEventListener('click', () => openModal(course));
+                courseGrid.appendChild(card);
+            });
+        }
+
+        function updateUI() {
+            yearTabs.forEach(tab => {
+                if (parseInt(tab.dataset.year) === currentYear) {
+                    tab.classList.add('tab-active');
+                    tab.classList.remove('text-slate-500');
+                } else {
+                    tab.classList.remove('tab-active');
+                    tab.classList.add('text-slate-500');
+                }
+            });
+
+            if (currentYear > 2) {
+                streamContainer.classList.remove('hidden');
+                streamBtns.forEach(btn => {
+                    if (btn.dataset.stream === currentStream) {
+                        btn.classList.add('stream-btn-active');
+                        btn.classList.remove('text-slate-600', 'hover:bg-slate-200');
+                    } else {
+                        btn.classList.remove('stream-btn-active');
+                        btn.classList.add('text-slate-600', 'hover:bg-slate-200');
+                    }
+                });
+            } else {
+                streamContainer.classList.add('hidden');
+            }
+
+            renderCourses();
+        }
+
+        yearTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                currentYear = parseInt(e.target.dataset.year);
+                updateUI();
+            });
+        });
+
+        streamBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                currentStream = e.target.dataset.stream;
+                updateUI();
+            });
+        });
+
+        function openModal(course) {
+            document.getElementById('modal-code').innerText = course.code;
+            document.getElementById('modal-title').innerText = course.title;
+            document.getElementById('modal-credits').innerText = course.credits;
+            document.getElementById('modal-type').innerText = course.type + ' Module';
+            document.getElementById('modal-desc').innerText = course.desc;
+            
+            const topicsList = document.getElementById('modal-topics');
+            topicsList.innerHTML = '';
+            course.topics.forEach(topic => {
+                const li = document.createElement('li');
+                li.innerText = topic;
+                topicsList.appendChild(li);
+            });
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('modal-active');
+            
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContentBox.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContentBox.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.classList.remove('modal-active');
+            }, 300);
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        function initCharts() {
+            Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+            Chart.defaults.color = '#64748b';
+
+            const ctxCredit = document.getElementById('creditChart').getContext('2d');
+            new Chart(ctxCredit, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mathematics & Calculus', 'Core Statistics', 'Computer Science/IT', 'Industrial Stats (IS Path)', 'Math Finance (MF Path)', 'Research/Projects'],
+                    datasets: [{
+                        data: [15, 25, 10, 20, 20, 10], 
+                        backgroundColor: [
+                            '#e2e8f0', 
+                            '#94a3b8', 
+                            '#475569', 
+                            '#9f1239', 
+                            '#3b82f6', 
+                            '#1e293b'  
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, padding: 15 } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) { return ` ${context.label}: ~${context.raw}% of Curriculum`; }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            const ctxSkills = document.getElementById('skillsChart').getContext('2d');
+            new Chart(ctxSkills, {
+                type: 'radar',
+                data: {
+                    labels: [
+                        ['Stochastic', 'Modeling'], 
+                        ['Quality', 'Control'], 
+                        ['Data Mining &', 'Machine Learning'], 
+                        ['Operations', 'Optimization'], 
+                        ['Financial', 'Risk Analysis'], 
+                        ['Software', 'Programming']
+                    ],
+                    datasets: [
+                        {
+                            label: 'Industrial Statistics (IS)',
+                            data: [3, 9, 8, 9, 2, 7],
+                            backgroundColor: 'rgba(159, 18, 57, 0.2)',
+                            borderColor: 'rgba(159, 18, 57, 1)',
+                            pointBackgroundColor: 'rgba(159, 18, 57, 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Mathematical Finance (MF)',
+                            data: [9, 2, 6, 4, 9, 8],
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            pointLabels: { color: '#cbd5e1', font: { size: 11 } },
+                            ticks: { display: false, min: 0, max: 10 }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#f8fafc', padding: 20 } }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUI();
+            initCharts();
+        });
+
+    </script>
+</body>
+</html>
